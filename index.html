@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Инспектор ресурсов — View, HTML, CSS, JS</title>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: #1e1e2f;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #e0e0e0;
+        }
+
+        /* Панель вкладок */
+        .tab-bar {
+            display: flex;
+            background: #1e1e23;
+            border-bottom: 2px solid #25252b;
+            padding: 0 20px;
+            gap: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #b0b0c0;
+            padding: 14px 28px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+            margin-bottom: -2px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px 8px 0 0;
+        }
+
+        .tab-btn:hover {
+            color: #ffffff;
+            background: rgba(255,255,255,0.08);
+        }
+
+        .tab-btn.active {
+            color: #ffffff;
+            border-bottom: 3px solid #7aa2f7;
+            background: rgba(122, 162, 247, 0.1);
+            box-shadow: 0 -2px 10px rgba(122,162,247,0.15);
+        }
+
+        /* Основной контейнер */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            background: #1a1a20;
+        }
+
+        /* Панели редактора */
+        .editor-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1b1b1e;
+            border-right: 1px solid #18181b;
+        }
+
+        .panel-header {
+            background: #1c1c23;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #a0a0c0;
+            border-bottom: 1px solid #1a1a1e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-header span {
+            background: #232329;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: #d0d0f0;
+        }
+
+        textarea {
+            flex: 1;
+            background: #16161c;
+            color: #e0e0f0;
+            border: none;
+            padding: 16px;
+            font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            tab-size: 2;
+        }
+
+        textarea::placeholder {
+            color: #5a5a7a;
+            font-style: italic;
+        }
+
+        /* Панель предпросмотра (View) */
+        .view-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+            position: relative;
+        }
+
+        .view-header {
+            background: #19191c;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #b0b0d0;
+            border-bottom: 1px solid #1a1a1e;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .refresh-btn {
+            background: #7aa2f7;
+            border: none;
+            color: #0a0a1a;
+            font-weight: bold;
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            transition: background 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: #9bb5ff;
+        }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background: white;
+        }
+
+        /* Скрытие/отображение панелей */
+        .editor-panel.hidden {
+            display: none;
+        }
+
+        .view-panel.hidden {
+            display: none;
+        }
+
+        .full-width {
+            flex: 1;
+        }
+
+        /* Адаптивность: на узких экранах панели становятся уже */
+        @media (max-width: 800px) {
+            .tab-btn {
+                padding: 12px 16px;
+                font-size: 13px;
+            }
+            textarea {
+                font-size: 12px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Панель вкладок -->
+    <div class="tab-bar">
+        <button class="tab-btn active" id="tabView">👁️ View</button>
+        <button class="tab-btn" id="tabHtml">📄 HTML</button>
+        <button class="tab-btn" id="tabCss">🎨 CSS</button>
+        <button class="tab-btn" id="tabJs">⚡ JS</button>
+    </div>
+
+    <!-- Основной контейнер с редакторами и превью -->
+    <div class="main-container">
+        <!-- HTML редактор -->
+        <div class="editor-panel" id="htmlPanel">
+            <div class="panel-header">
+                📄 HTML <span>index.html</span>
+            </div>
+            <textarea id="htmlCode" placeholder="Введите HTML код..."><div class="bg-animation"></div>
+
+<nav>
+  <div class="container">
+    <div class="logo"><i class="fa-solid fa-code"></i> API.guide</div>
+    <ul class="nav-links">
+      <li><a href="#what">Что это</a></li>
+      <li><a href="#why">Зачем</a></li>
+      <li><a href="#how">Как работает</a></li>
+      <li><a href="#examples">Примеры</a></li>
+    </ul>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <h1>Что такое <span class="gradient-text">API</span><br>и зачем оно нужно?</h1>
+    <p>Разбираемся, как программы общаются друг с другом и почему без API не работает ни один современный сервис</p>
+    <a href="#what" class="cta-button">Узнать больше <i class="fa-solid fa-arrow-right"></i></a>
+  </div>
+</section>
+
+<section id="what" class="reveal">
+  <h2 class="section-title">Что такое <span class="gradient-text">API</span>?</h2>
+  <p class="section-subtitle">Простое объяснение сложного понятия</p>
+
+  <div class="what-is">
+    <p><strong>API</strong> (Application Programming Interface) — это набор правил и инструментов, с помощью которых одна программа взаимодействует с другой.</p>
+    <p>Представьте, что API — это <strong>посредник</strong>, который принимает запросы от одного приложения, передаёт их другому и возвращает ответ.</p>
+    <p>Благодаря API разработчики могут использовать готовые функции и данные других сервисов, не зная их внутреннего устройства.</p>
+  </div>
+
+  <div class="analogy">
+    <div class="analogy-icon"><i class="fa-solid fa-utensils"></i></div>
+    <h3>Аналогия с рестораном</h3>
+    <p>Вы (приложение) делаете заказ <strong>официанту</strong> (API). Официант передаёт заказ на кухню (сервер), а потом приносит вам готовое блюдо (данные). Вам не нужно знать, как готовится еда — достаточно знать меню.</p>
+  </div>
+</section>
+
+<section id="why" class="reveal">
+  <h2 class="section-title">Зачем нужно <span class="gradient-text">API</span>?</h2>
+  <p class="section-subtitle">Главные преимущества использования API</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fa-solid fa-bolt"></i></div>
+      <h3>Экономия времени</h3>
+      <p>Не нужно писать всё с нуля — используйте готовые функции сторонних сервисов.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fa-solid fa-link"></i></div>
+      <h3>Интеграция сервисов</h3>
+      <p>Соединяйте разные приложения и системы в единую экосистему.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
+      <h3>Безопасность</h3>
+      <p>API даёт доступ только к нужным данным, скрывая внутреннюю логику системы.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fa-solid fa-rocket"></i></div>
+      <h3>Масштабируемость</h3>
+      <p>Легко расширять функциональность приложения, добавляя новые интеграции.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fa-solid fa-globe"></i></div>
+      <h3>Универсальность</h3>
+      <p>API работает между разными языками программирования и платформами.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fa-solid fa-lightbulb"></i></div>
+      <h3>Инновации</h3>
+      <p>Открытые API позволяют создавать новые продукты на основе существующих.</p>
+    </div>
+  </div>
+</section>
+
+<section id="how" class="reveal">
+  <h2 class="section-title">Как это <span class="gradient-text">работает</span>?</h2>
+  <p class="section-subtitle">Упрощённая схема взаимодействия</p>
+
+  <div class="scheme">
+    <div class="scheme-node">
+      <div class="icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
+      <div class="label">Клиент</div>
+    </div>
+    <div class="scheme-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+    <div class="scheme-node">
+      <div class="icon"><i class="fa-solid fa-plug"></i></div>
+      <div class="label">API</div>
+    </div>
+    <div class="scheme-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+    <div class="scheme-node">
+      <div class="icon"><i class="fa-solid fa-server"></i></div>
+      <div class="label">Сервер</div>
+    </div>
+    <div class="scheme-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+    <div class="scheme-node">
+      <div class="icon"><i class="fa-solid fa-database"></i></div>
+      <div class="label">Данные</div>
+    </div>
+  </div>
+</section>
+
+<section id="examples" class="reveal">
+  <h2 class="section-title">Примеры <span class="gradient-text">из жизни</span></h2>
+  <p class="section-subtitle">Где вы встречаете API каждый день</p>
+
+  <div class="examples-grid">
+    <div class="example-card">
+      <div class="example-icon"><i class="fa-solid fa-map-location-dot"></i></div>
+      <h4>Карты на сайтах</h4>
+      <p>Сайты подключают карты через Google Maps API или Yandex Maps API.</p>
+    </div>
+    <div class="example-card">
+      <div class="example-icon"><i class="fa-solid fa-credit-card"></i></div>
+      <h4>Онлайн-оплата</h4>
+      <p>Платёжные системы используют API банков для проведения транзакций.</p>
+    </div>
+    <div class="example-card">
+      <div class="example-icon"><i class="fa-solid fa-cloud-sun-rain"></i></div>
+      <h4>Прогноз погоды</h4>
+      <p>Приложения погоды берут данные через API метеосервисов.</p>
+    </div>
+    <div class="example-card">
+      <div class="example-icon"><i class="fa-solid fa-key"></i></div>
+      <h4>Вход через соцсети</h4>
+      <p>Кнопка "Войти через Google" работает благодаря OAuth API.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2025 API.guide — Понятно об API <i class="fa-solid fa-code"></i></p>
+</footer></textarea>
+        </div>
+
+        <!-- CSS редактор -->
+        <div class="editor-panel hidden" id="cssPanel">
+            <div class="panel-header">
+                🎨 CSS <span>style.css</span>
+            </div>
+            <textarea id="cssCode" placeholder="Введите CSS стили...">* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg: #0a0a14;
+    --bg-secondary: #12121f;
+    --accent: #dc2626;        /* Красный */
+    --accent-2: #ef4444;      /* Светло-красный */
+    --accent-3: #b91c1c;      /* Тёмно-красный */
+    --accent-4: #f87171;      /* Пастельный красный */
+    --text: #e4e4f0;
+    --text-muted: #9ca3af;
+    --font-main: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-main);
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* Анимированный фон */
+  .bg-animation {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+  }
+
+  .bg-animation::before,
+  .bg-animation::after {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.3;
+    animation: float 15s ease-in-out infinite;
+  }
+
+  .bg-animation::before {
+    background: var(--accent);
+    top: -200px;
+    left: -200px;
+  }
+
+  .bg-animation::after {
+    background: var(--accent-2);
+    bottom: -200px;
+    right: -200px;
+    animation-delay: -7s;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(100px, 50px) scale(1.1); }
+    66% { transform: translate(-50px, 100px) scale(0.9); }
+  }
+
+  /* Навигация */
+  nav {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    padding: 1.2rem 2rem;
+    background: rgba(10, 10, 20, 0.7);
+    backdrop-filter: blur(20px);
+    z-index: 100;
+    border-bottom: 1px solid rgba(220, 38, 38, 0.15);
+    animation: slideDown 0.8s ease-out;
+  }
+
+  @keyframes slideDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  nav .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent-4), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo i {
+    margin-right: 0.4rem;
+    background: linear-gradient(135deg, var(--accent-4), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.3s ease;
+    position: relative;
+    font-weight: 500;
+    font-family: var(--font-main);
+  }
+
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-4));
+    transition: width 0.3s ease;
+  }
+
+  .nav-links a:hover {
+    color: var(--text);
+  }
+
+  .nav-links a:hover::after {
+    width: 100%;
+  }
+
+  /* Hero */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6rem 2rem 2rem;
+  }
+
+  .hero-content {
+    max-width: 900px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.5rem, 7vw, 5rem);
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    line-height: 1.1;
+    opacity: 0;
+    animation: fadeUp 1s ease-out 0.3s forwards;
+    font-family: var(--font-main);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-4));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero p {
+    font-size: clamp(1rem, 2vw, 1.3rem);
+    color: var(--text-muted);
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 1s ease-out 0.5s forwards;
+    font-weight: 400;
+  }
+
+  .cta-button {
+    display: inline-block;
+    padding: 1rem 2.5rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: white;
+    text-decoration: none;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1.05rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(220, 38, 38, 0.3);
+    opacity: 0;
+    animation: fadeUp 1s ease-out 0.7s forwards;
+    font-family: var(--font-main);
+  }
+
+  .cta-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(220, 38, 38, 0.5);
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Секции */
+  section {
+    padding: 6rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 1rem;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s ease;
+    font-family: var(--font-main);
+  }
+
+  .section-subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    margin-bottom: 4rem;
+    font-size: 1.1rem;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s ease 0.1s;
+    font-weight: 400;
+  }
+
+  .reveal.visible .section-title,
+  .reveal.visible .section-subtitle {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Что такое API */
+  .what-is {
+    background: rgba(220, 38, 38, 0.05);
+    border: 1px solid rgba(220, 38, 38, 0.15);
+    border-radius: 24px;
+    padding: 3rem;
+    margin-top: 2rem;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: all 0.8s ease 0.2s;
+  }
+
+  .reveal.visible .what-is {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .what-is p {
+    font-size: 1.15rem;
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  .what-is strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* Карточки преимуществ */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .feature-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(220, 38, 38, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    transition: all 0.4s ease;
+    opacity: 0;
+    transform: translateY(40px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(220, 38, 38, 0.1), transparent);
+    transition: left 0.6s ease;
+  }
+
+  .feature-card:hover::before {
+    left: 100%;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(220, 38, 38, 0.3);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  .reveal.visible .feature-card {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .reveal.visible .feature-card:nth-child(1) { transition: all 0.6s ease 0.1s; }
+  .reveal.visible .feature-card:nth-child(2) { transition: all 0.6s ease 0.2s; }
+  .reveal.visible .feature-card:nth-child(3) { transition: all 0.6s ease 0.3s; }
+  .reveal.visible .feature-card:nth-child(4) { transition: all 0.6s ease 0.4s; }
+  .reveal.visible .feature-card:nth-child(5) { transition: all 0.6s ease 0.5s; }
+  .reveal.visible .feature-card:nth-child(6) { transition: all 0.6s ease 0.6s; }
+
+  .feature-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--accent-3), var(--accent-2));
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-bottom: 1.2rem;
+    color: white;
+  }
+
+  .feature-card h3 {
+    font-size: 1.3rem;
+    margin-bottom: 0.6rem;
+    font-weight: 600;
+  }
+
+  .feature-card p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 400;
+  }
+
+  /* Аналогия */
+  .analogy {
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(239, 68, 68, 0.1));
+    border: 1px solid rgba(220, 38, 38, 0.25);
+    border-radius: 24px;
+    padding: 3rem;
+    text-align: center;
+    margin-top: 3rem;
+    opacity: 0;
+    transform: scale(0.95);
+    transition: all 0.8s ease 0.3s;
+  }
+
+  .reveal.visible .analogy {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .analogy-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    display: inline-block;
+    animation: bounce 2s ease-in-out infinite;
+    color: var(--accent-4);
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+
+  .analogy h3 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  .analogy p {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    max-width: 700px;
+    margin: 0 auto;
+    font-weight: 400;
+  }
+
+  /* Схема работы */
+  .scheme {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 3rem;
+    padding: 3rem 1rem;
+    background: rgba(220, 38, 38, 0.03);
+    border-radius: 24px;
+    border: 1px solid rgba(220, 38, 38, 0.15);
+    opacity: 0;
+    transition: opacity 0.8s ease 0.3s;
+  }
+
+  .reveal.visible .scheme {
+    opacity: 1;
+  }
+
+  .scheme-node {
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(220, 38, 38, 0.3);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    text-align: center;
+    min-width: 150px;
+    transition: all 0.3s ease;
+  }
+
+  .scheme-node:hover {
+    border-color: var(--accent-2);
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(220, 38, 38, 0.4);
+  }
+
+  .scheme-node .icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--accent-4);
+  }
+
+  .scheme-node .label {
+    font-weight: 600;
+  }
+
+  .scheme-arrow {
+    font-size: 2rem;
+    color: var(--accent-2);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; transform: translateX(0); }
+    50% { opacity: 1; transform: translateX(10px); }
+  }
+
+  /* Примеры */
+  .examples-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .example-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(220, 38, 38, 0.1);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  .reveal.visible .example-card {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .reveal.visible .example-card:nth-child(1) { transition: all 0.5s ease 0.1s; }
+  .reveal.visible .example-card:nth-child(2) { transition: all 0.5s ease 0.2s; }
+  .reveal.visible .example-card:nth-child(3) { transition: all 0.5s ease 0.3s; }
+  .reveal.visible .example-card:nth-child(4) { transition: all 0.5s ease 0.4s; }
+
+  .example-card:hover {
+    background: rgba(220, 38, 38, 0.05);
+    transform: translateY(-5px);
+  }
+
+  .example-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.8rem;
+    color: var(--accent-4);
+  }
+
+  .example-card h4 {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .example-card p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 400;
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-muted);
+    border-top: 1px solid rgba(220, 38, 38, 0.15);
+    margin-top: 4rem;
+    font-weight: 400;
+  }
+
+  /* Адаптив */
+  @media (max-width: 768px) {
+    .nav-links {
+      display: none;
+    }
+    section {
+      padding: 4rem 1.5rem;
+    }
+    .what-is, .analogy {
+      padding: 2rem 1.5rem;
+    }
+    .scheme-arrow {
+      transform: rotate(90deg);
+    }
+  }
+}</textarea>
+        </div>
+
+        <!-- JS редактор -->
+        <div class="editor-panel hidden" id="jsPanel">
+            <div class="panel-header">
+                ⚡ JavaScript <span>script.js</span>
+            </div>
+            <textarea id="jsCode" placeholder="Введите JavaScript код...">// Анимация появления секций при скролле
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, {
+    threshold: 0.15
+  });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Параллакс для hero
+  const hero = document.querySelector('.hero-content');
+  window.addEventListener('scroll', () => {
+    const scrolled = window.pageYOffset;
+    if (scrolled < window.innerHeight) {
+      hero.style.transform = `translateY(${scrolled * 0.3}px)`;
+      hero.style.opacity = 1 - scrolled / window.innerHeight;
+    }
+  });
+
+  // Плавная смена цвета навбара
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 50) {
+      nav.style.background = 'rgba(10, 10, 20, 0.9)';
+    } else {
+      nav.style.background = 'rgba(10, 10, 20, 0.7)';
+    }
+  });</textarea>
+        </div>
+
+        <!-- Панель предпросмотра (View) -->
+        <div class="view-panel" id="viewPanel">
+            <div class="view-header">
+                🌐 Предпросмотр результата
+                <button class="refresh-btn" id="refreshView">↻ Обновить</button>
+            </div>
+            <iframe id="previewFrame" title="Предпросмотр"></iframe>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // Элементы DOM
+            const tabView = document.getElementById('tabView');
+            const tabHtml = document.getElementById('tabHtml');
+            const tabCss = document.getElementById('tabCss');
+            const tabJs = document.getElementById('tabJs');
+
+            const htmlPanel = document.getElementById('htmlPanel');
+            const cssPanel = document.getElementById('cssPanel');
+            const jsPanel = document.getElementById('jsPanel');
+            const viewPanel = document.getElementById('viewPanel');
+
+            const htmlCode = document.getElementById('htmlCode');
+            const cssCode = document.getElementById('cssCode');
+            const jsCode = document.getElementById('jsCode');
+            const previewFrame = document.getElementById('previewFrame');
+            const refreshBtn = document.getElementById('refreshView');
+
+            // Функция переключения вкладок
+            function setActiveTab(activeTab) {
+                // Сброс всех кнопок
+                [tabView, tabHtml, tabCss, tabJs].forEach(btn => btn.classList.remove('active'));
+                activeTab.classList.add('active');
+
+                // Скрываем все панели редакторов и View
+                htmlPanel.classList.add('hidden');
+                cssPanel.classList.add('hidden');
+                jsPanel.classList.add('hidden');
+                viewPanel.classList.add('hidden');
+
+                // Показываем нужную панель
+                if (activeTab === tabView) {
+                    viewPanel.classList.remove('hidden');
+                    // При переключении на View автоматически обновляем предпросмотр
+                    updatePreview();
+                } else if (activeTab === tabHtml) {
+                    htmlPanel.classList.remove('hidden');
+                } else if (activeTab === tabCss) {
+                    cssPanel.classList.remove('hidden');
+                } else if (activeTab === tabJs) {
+                    jsPanel.classList.remove('hidden');
+                }
+            }
+
+            // Функция сборки полного HTML документа из трёх частей
+            function buildFullDocument() {
+                const html = htmlCode.value;
+                const css = cssCode.value;
+                const js = jsCode.value;
+
+                return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Что такое API?</title>
+  <style>${css}</style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  ${html}
+  <script>${js}<\/script>
+</body>
+</html>`;
+            }
+
+            // Обновление iframe
+            function updatePreview() {
+                try {
+                    const fullDocument = buildFullDocument();
+                    const blob = new Blob([fullDocument], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+
+                    // Очищаем предыдущий URL если есть
+                    if (previewFrame.src && previewFrame.src.startsWith('blob:')) {
+                        URL.revokeObjectURL(previewFrame.src);
+                    }
+
+                    previewFrame.src = url;
+                } catch (error) {
+                    console.error('Ошибка обновления предпросмотра:', error);
+                    // В случае ошибки показываем сообщение в iframe
+                    const errorDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="color:red; padding:20px; font-family:monospace;"><h2>Ошибка сборки</h2><pre>${error.message}</pre></body></html>`;
+                    const blob = new Blob([errorDoc], { type: 'text/html' });
+                    previewFrame.src = URL.createObjectURL(blob);
+                }
+            }
+
+            // Обработчики кликов по вкладкам
+            tabView.addEventListener('click', () => setActiveTab(tabView));
+            tabHtml.addEventListener('click', () => setActiveTab(tabHtml));
+            tabCss.addEventListener('click', () => setActiveTab(tabCss));
+            tabJs.addEventListener('click', () => setActiveTab(tabJs));
+
+            // Кнопка обновления предпросмотра
+            refreshBtn.addEventListener('click', updatePreview);
+
+            // Автообновление при изменении кода (с дебаунсом для производительности)
+            let debounceTimer;
+            function autoUpdatePreview() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    // Обновляем только если активна вкладка View (чтобы не тратить ресурсы зря)
+                    if (!viewPanel.classList.contains('hidden')) {
+                        updatePreview();
+                    }
+                }, 400);
+            }
+
+            htmlCode.addEventListener('input', autoUpdatePreview);
+            cssCode.addEventListener('input', autoUpdatePreview);
+            jsCode.addEventListener('input', autoUpdatePreview);
+
+            // Инициализация: показываем View и загружаем предпросмотр
+            setActiveTab(tabView);
+            updatePreview();
+
+            // Дополнительно: обработка комбинации Ctrl+Enter для принудительного обновления из любого поля
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    updatePreview();
+                    // Переключаемся на View для удобства
+                    setActiveTab(tabView);
+                }
+            });
+
+            console.log('🔧 Инспектор ресурсов готов. Используйте вкладки View, HTML, CSS, JS.');
+            console.log('💡 Совет: Ctrl+Enter быстро обновит предпросмотр и переключит на View.');
+        })();
+    </script>
+</body>
+</html>
